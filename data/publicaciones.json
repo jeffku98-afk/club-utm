@@ -1,0 +1,24 @@
+[
+  {
+    "id": "open-internacional-copa-utm-2026",
+    "tipo": "torneo",
+    "titulo": "I Open Internacional Copa UTM 2026",
+    "fecha": "2026-08-14",
+    "sede": "Coliseo del Club Lawn Tennis de la Exposición",
+    "resumen": "Del 14 al 16 de agosto. Categorías oficiales del circuito nacional con puntaje para el ranking, categorías complementarias para no rankeados en individuales y dobles, y categoría paratenis de mesa. Inscripciones ampliadas hasta el viernes 7 de agosto: clubutm@gmail.com / 987647459.",
+    "basesUrl": null,
+    "imagenUrl": "/open-internacional-copa-utm-2026.jpeg",
+    "creadoEn": "2026-07-20T12:00:00.000Z"
+  },
+  {
+    "id": "campeones-juan-xxiii",
+    "tipo": "noticia",
+    "titulo": "El club campeonó en el Open Juan XXIII",
+    "fecha": "2026-07-12",
+    "sede": "Colegio Juan XXIII",
+    "resumen": "Nuestros deportistas subieron al podio en el 34° Open Internacional de Tenis de Mesa Juan XXIII, en individuales, dobles y paratenis de mesa. Formamos equipos, creamos campeones.",
+    "basesUrl": null,
+    "imagenUrl": "/equipo-juan-xxiii.png",
+    "creadoEn": "2026-07-12T12:00:00.000Z"
+  }
+]

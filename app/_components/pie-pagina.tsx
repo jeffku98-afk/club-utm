@@ -1,0 +1,22 @@
+export function PiePagina() {
+  return (
+    <footer className="bg-mesa px-6 py-11 text-sm text-white/70">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="titular text-lg font-semibold tracking-wider text-white">
+            Club UTM · Unidos por el tenis de mesa
+          </p>
+          <p>Jesús María y Magdalena del Mar · Lima, Perú · clubutm@gmail.com</p>
+        </div>
+        <div className="flex gap-4">
+          <a href="https://www.instagram.com/clubutmoficial/" target="_blank" rel="noopener" className="text-white">
+            Instagram
+          </a>
+          <a href="https://www.tiktok.com/@clubutm" target="_blank" rel="noopener" className="text-white">
+            TikTok
+          </a>
+        </div>
+      </div>
+    </footer>
+  )
+}
