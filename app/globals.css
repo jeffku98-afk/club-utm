@@ -20,7 +20,7 @@
 
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 6rem;
 }
 
 body {
@@ -66,45 +66,22 @@ body {
   width: 3px;
 }
 
-.pelota-rally {
-  animation: cruza 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate;
+.pelota-rebote {
+  animation: rebota 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.pelota-rally::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  animation: pica 1.3s ease-in-out infinite;
-}
-
-.sombra-rally {
-  animation:
-    cruza 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite alternate,
-    encoge 1.3s ease-in-out infinite;
-}
-
-@keyframes cruza {
-  from { left: 6%; }
-  to { left: calc(94% - 38px); }
-}
-
-@keyframes pica {
-  0%, 100% { transform: translateY(-92px); }
-  50% { transform: translateY(0); }
-}
-
-@keyframes encoge {
-  0%, 100% { transform: scaleX(0.55); opacity: 0.18; }
-  50% { transform: scaleX(1); opacity: 0.35; }
+@keyframes rebota {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(72px) scaleY(0.9);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pelota-rally,
-  .pelota-rally::after,
-  .sombra-rally {
+  .pelota-rebote {
     animation: none;
   }
-  .pelota-rally { left: 44%; top: 96px; }
-  .sombra-rally { left: 44%; }
 }

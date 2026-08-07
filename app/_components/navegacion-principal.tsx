@@ -29,6 +29,7 @@ export function NavegacionPrincipal() {
       isMenuOpen={menuAbierto}
       onMenuOpenChange={setMenuAbierto}
       maxWidth="xl"
+      height="5.5rem"
       classNames={{
         base: 'bg-mesa/95 backdrop-blur border-b-2 border-pelota',
         wrapper: 'px-6',
@@ -43,14 +44,14 @@ export function NavegacionPrincipal() {
             <Image
               src="/logo-utm.jpeg"
               alt="Club UTM"
-              width={40}
-              height={40}
-              className="rounded-full bg-white"
+              width={72}
+              height={72}
+              className="h-16 w-16 rounded-full bg-white object-contain p-0.5 ring-2 ring-pelota"
               priority
             />
             <span className="leading-none">
-              <span className="titular block text-xl font-bold text-white">Club UTM</span>
-              <span className="epigrafe block text-[10px] text-pelota-suave">
+              <span className="titular block text-3xl font-bold leading-none text-white">Club UTM</span>
+              <span className="epigrafe block text-[11px] text-pelota-suave">
                 Unidos por el tenis de mesa
               </span>
             </span>

@@ -1,4 +1,5 @@
 import { Button } from '@heroui/react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 export function Portada() {
@@ -41,19 +42,16 @@ export function Portada() {
           </div>
         </div>
 
-        <div className="relative hidden h-60 lg:block" aria-hidden>
-          <svg viewBox="0 0 74 96" className="absolute bottom-0 left-0 h-24 w-[74px]">
-            <ellipse cx="37" cy="36" rx="32" ry="35" fill="#FF6B1A" />
-            <ellipse cx="37" cy="36" rx="25" ry="28" fill="#E85C0E" />
-            <rect x="30" y="66" width="14" height="30" rx="6" fill="#F4F6FB" />
-          </svg>
-          <svg viewBox="0 0 74 96" className="absolute bottom-0 right-0 h-24 w-[74px] -scale-x-100">
-            <ellipse cx="37" cy="36" rx="32" ry="35" fill="#FFFFFF" />
-            <ellipse cx="37" cy="36" rx="25" ry="28" fill="#14509B" />
-            <rect x="30" y="66" width="14" height="30" rx="6" fill="#FFA24D" />
-          </svg>
-          <div className="sombra-rally absolute bottom-7 left-[8%] h-2 w-[38px] rounded-full bg-black/30 blur-[2px]" />
-          <div className="pelota-rally absolute left-[8%] h-[38px] w-[38px] rounded-full bg-[radial-gradient(circle_at_32%_30%,#FFC48A,#FF6B1A_62%)] shadow-lg" />
+        <div className="relative flex justify-center lg:justify-end" aria-hidden>
+          <div className="pelota-rebote absolute left-4 top-6 h-10 w-10 rounded-full bg-[radial-gradient(circle_at_32%_30%,#FFC48A,#FF6B1A_62%)] shadow-lg sm:left-10" />
+          <Image
+            src="/mascota-utm.png"
+            alt=""
+            width={784}
+            height={1312}
+            priority
+            className="h-[340px] w-auto drop-shadow-2xl sm:h-[420px] lg:h-[460px]"
+          />
         </div>
       </div>
     </section>

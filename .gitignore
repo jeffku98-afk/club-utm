@@ -3,3 +3,6 @@ node_modules
 .env.local
 public/bases/*
 !public/bases/.gitkeep
+
+.vercel
+.env*
