@@ -4,17 +4,39 @@ import { Button, Card, CardBody, Input, Select, SelectItem, Textarea } from '@he
 import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CLAVE_PUBLICACIONES, publicar } from '@/lib/api'
 import type { TipoPublicacion } from '@/lib/tipos'
 
-const TAMANO_MAXIMO = 4 * 1024 * 1024
+const TAMANO_MAXIMO_PDF = 4 * 1024 * 1024
+const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024
+const FORMATOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp']
 
 export function FormularioPublicacion() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const campoArchivo = useRef<HTMLInputElement>(null)
+  const campoPortada = useRef<HTMLInputElement>(null)
   const [errorArchivo, setErrorArchivo] = useState('')
+  const [vistaPrevia, setVistaPrevia] = useState<string | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (vistaPrevia) URL.revokeObjectURL(vistaPrevia)
+    }
+  }, [vistaPrevia])
+
+  function limpiarArchivos() {
+    if (campoArchivo.current) campoArchivo.current.value = ''
+    if (campoPortada.current) campoPortada.current.value = ''
+    setVistaPrevia(null)
+    setErrorArchivo('')
+  }
+
+  function alElegirPortada() {
+    const imagen = campoPortada.current?.files?.[0]
+    setVistaPrevia(imagen ? URL.createObjectURL(imagen) : null)
+  }
 
   const { mutateAsync, isPending, isSuccess, error } = useMutation({
     mutationFn: publicar,
@@ -35,19 +57,29 @@ export function FormularioPublicacion() {
     },
     onSubmit: async ({ value, formApi }) => {
       const archivo = campoArchivo.current?.files?.[0]
-      if (archivo && archivo.size > TAMANO_MAXIMO) {
+      const portada = campoPortada.current?.files?.[0]
+
+      if (archivo && archivo.size > TAMANO_MAXIMO_PDF) {
         setErrorArchivo('El PDF supera los 4 MB. Súbelo a Drive y pega el enlace.')
+        return
+      }
+      if (portada && !FORMATOS_IMAGEN.includes(portada.type)) {
+        setErrorArchivo('La portada debe ser JPG, PNG o WebP.')
+        return
+      }
+      if (portada && portada.size > TAMANO_MAXIMO_IMAGEN) {
+        setErrorArchivo('La portada supera los 2 MB. Redúcela antes de subirla.')
         return
       }
 
       const datos = new FormData()
       Object.entries(value).forEach(([campo, valor]) => datos.append(campo, valor))
       if (archivo) datos.append('bases', archivo)
+      if (portada) datos.append('portada', portada)
 
       await mutateAsync(datos)
       formApi.reset()
-      if (campoArchivo.current) campoArchivo.current.value = ''
-      setErrorArchivo('')
+      limpiarArchivos()
     },
   })
 
@@ -136,8 +168,33 @@ export function FormularioPublicacion() {
         </form.Field>
 
         <div>
+          <label className="epigrafe mb-2 block text-xs text-default-500" htmlFor="portada">
+            Imagen de portada (opcional)
+          </label>
+          <input
+            id="portada"
+            ref={campoPortada}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={alElegirPortada}
+            className="w-full rounded-xl border border-default-200 bg-default-100 p-3 text-sm"
+          />
+          <p className="mt-1 text-xs text-default-400">
+            JPG, PNG o WebP, hasta 2 MB. Se muestra en la tarjeta del evento.
+          </p>
+          {vistaPrevia && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={vistaPrevia}
+              alt="Vista previa de la portada"
+              className="mt-3 h-40 w-full rounded-xl border border-default-200 object-cover"
+            />
+          )}
+        </div>
+
+        <div>
           <label className="epigrafe mb-2 block text-xs text-default-500" htmlFor="bases">
-            Bases en PDF
+            Bases en PDF (opcional)
           </label>
           <input
             id="bases"

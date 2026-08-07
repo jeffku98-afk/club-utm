@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { crearPublicacion, guardarBases, listarPublicaciones } from '@/lib/almacen'
+import { crearPublicacion, guardarBases, guardarPortada, listarPublicaciones } from '@/lib/almacen'
 import { COOKIE_SESION, sesionValida } from '@/lib/sesion'
 import type { TipoPublicacion } from '@/lib/tipos'
 
 export const runtime = 'nodejs'
 
-const TAMANO_MAXIMO = 4 * 1024 * 1024
+const TAMANO_MAXIMO_PDF = 4 * 1024 * 1024
+const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024
+const FORMATOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp']
 
 export async function GET() {
   return NextResponse.json(await listarPublicaciones())
@@ -32,10 +34,23 @@ export async function POST(req: NextRequest) {
     if (bases.type !== 'application/pdf') {
       return NextResponse.json({ error: 'Las bases deben estar en formato PDF.' }, { status: 400 })
     }
-    if (bases.size > TAMANO_MAXIMO) {
+    if (bases.size > TAMANO_MAXIMO_PDF) {
       return NextResponse.json({ error: 'El PDF supera los 4 MB.' }, { status: 400 })
     }
     basesUrl = await guardarBases(bases)
+  }
+
+  const portada = formulario.get('portada')
+  let imagenUrl: string | null = String(formulario.get('imagenUrl') ?? '').trim() || null
+
+  if (portada instanceof File && portada.size > 0) {
+    if (!FORMATOS_IMAGEN.includes(portada.type)) {
+      return NextResponse.json({ error: 'La portada debe ser JPG, PNG o WebP.' }, { status: 400 })
+    }
+    if (portada.size > TAMANO_MAXIMO_IMAGEN) {
+      return NextResponse.json({ error: 'La portada supera los 2 MB.' }, { status: 400 })
+    }
+    imagenUrl = await guardarPortada(portada)
   }
 
   const publicacion = await crearPublicacion({
@@ -45,7 +60,7 @@ export async function POST(req: NextRequest) {
     sede: String(formulario.get('sede') ?? '').trim(),
     resumen,
     basesUrl,
-    imagenUrl: String(formulario.get('imagenUrl') ?? '').trim() || null,
+    imagenUrl,
   })
 
   return NextResponse.json(publicacion, { status: 201 })

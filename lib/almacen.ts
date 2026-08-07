@@ -4,6 +4,7 @@ import type { NuevaPublicacion, Publicacion } from './tipos'
 
 const RUTA_DATOS = 'datos/publicaciones.json'
 const PREFIJO_BASES = 'bases/'
+const PREFIJO_PORTADAS = 'portadas/'
 
 const SEMILLA: Publicacion[] = [
   {
@@ -71,19 +72,31 @@ export async function eliminarPublicacion(id: string): Promise<boolean> {
   const publicacion = publicaciones.find((p) => p.id === id)
   if (!publicacion) return false
 
-  if (publicacion.basesUrl?.includes(PREFIJO_BASES)) {
-    await del(publicacion.basesUrl).catch(() => null)
-  }
+  const archivos = [publicacion.basesUrl, publicacion.imagenUrl].filter(
+    (url): url is string => !!url && url.startsWith('https://'),
+  )
+  await Promise.all(archivos.map((url) => del(url).catch(() => null)))
 
   await escribirArchivo(publicaciones.filter((p) => p.id !== id))
   return true
 }
 
+function nombreSeguro(archivo: File): string {
+  return `${Date.now()}-${archivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`
+}
+
 export async function guardarBases(archivo: File): Promise<string> {
-  const nombre = archivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')
-  const { url } = await put(`${PREFIJO_BASES}${Date.now()}-${nombre}`, archivo, {
+  const { url } = await put(`${PREFIJO_BASES}${nombreSeguro(archivo)}`, archivo, {
     access: 'public',
     contentType: 'application/pdf',
+  })
+  return url
+}
+
+export async function guardarPortada(archivo: File): Promise<string> {
+  const { url } = await put(`${PREFIJO_PORTADAS}${nombreSeguro(archivo)}`, archivo, {
+    access: 'public',
+    contentType: archivo.type,
   })
   return url
 }

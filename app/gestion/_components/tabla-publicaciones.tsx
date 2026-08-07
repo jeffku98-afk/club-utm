@@ -17,6 +17,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { CLAVE_PUBLICACIONES, eliminar, fechaLarga, obtenerPublicaciones } from '@/lib/api'
 import type { Publicacion } from '@/lib/tipos'
@@ -45,9 +46,22 @@ export function TablaPublicaciones({ iniciales }: { iniciales: Publicacion[] }) 
     columna.accessor('titulo', {
       header: 'Publicación',
       cell: (celda) => (
-        <div>
-          <p className="font-semibold">{celda.getValue()}</p>
-          <p className="text-xs text-default-500">{fechaLarga(celda.row.original.fecha)}</p>
+        <div className="flex items-center gap-3">
+          {celda.row.original.imagenUrl ? (
+            <Image
+              src={celda.row.original.imagenUrl}
+              alt=""
+              width={80}
+              height={56}
+              className="h-14 w-20 shrink-0 rounded-lg object-cover"
+            />
+          ) : (
+            <span className="h-14 w-20 shrink-0 rounded-lg bg-default-100" />
+          )}
+          <div>
+            <p className="font-semibold">{celda.getValue()}</p>
+            <p className="text-xs text-default-500">{fechaLarga(celda.row.original.fecha)}</p>
+          </div>
         </div>
       ),
     }),
