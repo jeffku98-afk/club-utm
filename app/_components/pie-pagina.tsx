@@ -17,14 +17,6 @@ export function PiePagina() {
           height={1312}
           className="hidden h-24 w-auto sm:block"
         />
-        <div className="flex gap-4">
-          <a href="https://www.instagram.com/clubutmoficial/" target="_blank" rel="noopener" className="text-white">
-            Instagram
-          </a>
-          <a href="https://www.tiktok.com/@clubutm" target="_blank" rel="noopener" className="text-white">
-            TikTok
-          </a>
-        </div>
       </div>
     </footer>
   )

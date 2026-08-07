@@ -18,7 +18,7 @@ const SECCIONES = [
   { href: '#prensa', etiqueta: 'Prensa' },
   { href: '#galeria', etiqueta: 'Galería' },
   { href: '#publicaciones', etiqueta: 'Eventos y noticias' },
-  { href: '#sedes', etiqueta: 'Sedes' },
+  { href: '#sedes', etiqueta: 'Sedes y Redes' },
 ]
 
 export function NavegacionPrincipal() {
