@@ -1,6 +1,13 @@
 import { del, list, put } from '@vercel/blob'
 import { randomUUID } from 'node:crypto'
-import type { NuevaPublicacion, Publicacion } from './tipos'
+import type {
+  DocumentoTorneo,
+  FormatoDocumento,
+  NuevaPublicacion,
+  Publicacion,
+  SeccionTorneo,
+  Torneo,
+} from './tipos'
 
 const RUTA_DATOS = 'datos/publicaciones.json'
 const PREFIJO_BASES = 'bases/'
@@ -99,4 +106,78 @@ export async function guardarPortada(archivo: File): Promise<string> {
     contentType: archivo.type,
   })
   return url
+}
+
+const RUTA_TORNEO = 'datos/open-utm.json'
+const PREFIJO_TORNEO = 'torneo/'
+
+const TORNEO_VACIO: Torneo = { documentos: {}, galeriaUrl: null }
+
+export async function obtenerTorneo(): Promise<Torneo> {
+  try {
+    const { blobs } = await list({ prefix: RUTA_TORNEO, limit: 1 })
+    if (blobs.length === 0) return TORNEO_VACIO
+
+    const respuesta = await fetch(blobs[0].url, { cache: 'no-store' })
+    if (!respuesta.ok) return TORNEO_VACIO
+    return (await respuesta.json()) as Torneo
+  } catch {
+    return TORNEO_VACIO
+  }
+}
+
+async function escribirTorneo(torneo: Torneo): Promise<void> {
+  await put(RUTA_TORNEO, JSON.stringify(torneo, null, 2), {
+    access: 'public',
+    contentType: 'application/json',
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    cacheControlMaxAge: 0,
+  })
+}
+
+export async function guardarDocumentoTorneo(
+  seccion: SeccionTorneo,
+  archivo: File,
+  formato: FormatoDocumento,
+): Promise<DocumentoTorneo> {
+  const torneo = await obtenerTorneo()
+  const anterior = torneo.documentos[seccion]
+
+  const { url } = await put(`${PREFIJO_TORNEO}${seccion}/${nombreSeguro(archivo)}`, archivo, {
+    access: 'public',
+    contentType: archivo.type,
+  })
+
+  const documento: DocumentoTorneo = {
+    nombre: archivo.name,
+    url,
+    formato,
+    actualizadoEn: new Date().toISOString(),
+  }
+
+  await escribirTorneo({ ...torneo, documentos: { ...torneo.documentos, [seccion]: documento } })
+  if (anterior?.url) await del(anterior.url).catch(() => null)
+
+  return documento
+}
+
+export async function eliminarDocumentoTorneo(seccion: SeccionTorneo): Promise<boolean> {
+  const torneo = await obtenerTorneo()
+  const documento = torneo.documentos[seccion]
+  if (!documento) return false
+
+  const documentos = { ...torneo.documentos }
+  delete documentos[seccion]
+
+  await escribirTorneo({ ...torneo, documentos })
+  await del(documento.url).catch(() => null)
+  return true
+}
+
+export async function guardarGaleriaTorneo(galeriaUrl: string | null): Promise<Torneo> {
+  const torneo = await obtenerTorneo()
+  const actualizado = { ...torneo, galeriaUrl }
+  await escribirTorneo(actualizado)
+  return actualizado
 }

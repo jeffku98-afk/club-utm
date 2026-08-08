@@ -1,6 +1,20 @@
 'use client'
 
-import { Button, Card, CardBody, CardFooter, Chip, Tab, Tabs } from '@heroui/react'
+import {
+  Button,
+  Card,
+  CardBody,
+  CardFooter,
+  Chip,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Tab,
+  Tabs,
+  useDisclosure,
+} from '@heroui/react'
 import { useQuery } from '@tanstack/react-query'
 import Image from 'next/image'
 import { useState } from 'react'
@@ -11,6 +25,8 @@ type Filtro = 'todo' | 'torneo' | 'noticia'
 
 export function Publicaciones({ iniciales }: { iniciales: Publicacion[] }) {
   const [filtro, setFiltro] = useState<Filtro>('todo')
+  const [seleccionada, setSeleccionada] = useState<Publicacion | null>(null)
+  const { isOpen, onOpen, onOpenChange } = useDisclosure()
 
   const { data: publicaciones = [] } = useQuery({
     queryKey: CLAVE_PUBLICACIONES,
@@ -19,6 +35,11 @@ export function Publicaciones({ iniciales }: { iniciales: Publicacion[] }) {
   })
 
   const visibles = publicaciones.filter((p) => filtro === 'todo' || p.tipo === filtro)
+
+  function verDetalle(publicacion: Publicacion) {
+    setSeleccionada(publicacion)
+    onOpen()
+  }
 
   return (
     <section id="publicaciones" className="bg-papel px-6 py-20">
@@ -52,16 +73,72 @@ export function Publicaciones({ iniciales }: { iniciales: Publicacion[] }) {
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {visibles.map((publicacion) => (
-              <TarjetaPublicacion key={publicacion.id} publicacion={publicacion} />
+              <TarjetaPublicacion
+                key={publicacion.id}
+                publicacion={publicacion}
+                onVerDetalle={() => verDetalle(publicacion)}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="3xl" scrollBehavior="inside">
+        <ModalContent>
+          {(cerrar) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <span className="titular text-2xl">{seleccionada?.titulo}</span>
+                <span className="text-sm font-normal text-default-500">
+                  {seleccionada && fechaLarga(seleccionada.fecha)}
+                  {seleccionada?.sede && ` · ${seleccionada.sede}`}
+                </span>
+              </ModalHeader>
+              <ModalBody>
+                {seleccionada?.imagenUrl && (
+                  <Image
+                    src={seleccionada.imagenUrl}
+                    alt={seleccionada.titulo}
+                    width={1200}
+                    height={1600}
+                    className="w-full rounded-xl object-contain"
+                  />
+                )}
+                <p className="whitespace-pre-wrap text-default-700">{seleccionada?.resumen}</p>
+              </ModalBody>
+              <ModalFooter>
+                {seleccionada?.basesUrl && (
+                  <Button
+                    as="a"
+                    href={seleccionada.basesUrl}
+                    target="_blank"
+                    rel="noopener"
+                    color="secondary"
+                    radius="full"
+                    className="titular tracking-wider"
+                  >
+                    Descargar adjunto
+                  </Button>
+                )}
+                <Button variant="light" radius="full" onPress={cerrar} className="titular tracking-wider">
+                  Cerrar
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
     </section>
   )
 }
 
-function TarjetaPublicacion({ publicacion }: { publicacion: Publicacion }) {
+function TarjetaPublicacion({
+  publicacion,
+  onVerDetalle,
+}: {
+  publicacion: Publicacion
+  onVerDetalle: () => void
+}) {
   return (
     <Card shadow="sm" className="border border-default-200">
       {publicacion.imagenUrl && (
@@ -88,23 +165,33 @@ function TarjetaPublicacion({ publicacion }: { publicacion: Publicacion }) {
           {fechaLarga(publicacion.fecha)}
           {publicacion.sede && ` · ${publicacion.sede}`}
         </p>
-        <p className="text-sm text-default-700">{publicacion.resumen}</p>
+        <p className="line-clamp-3 text-sm text-default-700">{publicacion.resumen}</p>
       </CardBody>
-      {publicacion.basesUrl && (
-        <CardFooter>
+      <CardFooter className="gap-2">
+        <Button
+          color="primary"
+          radius="full"
+          size="sm"
+          onPress={onVerDetalle}
+          className="titular tracking-wider"
+        >
+          Ver detalles
+        </Button>
+        {publicacion.basesUrl && (
           <Button
             as="a"
             href={publicacion.basesUrl}
             target="_blank"
             rel="noopener"
-            color="secondary"
+            variant="bordered"
             radius="full"
+            size="sm"
             className="titular tracking-wider"
           >
-            Descargar bases (PDF)
+            Bases (PDF)
           </Button>
-        </CardFooter>
-      )}
+        )}
+      </CardFooter>
     </Card>
   )
 }

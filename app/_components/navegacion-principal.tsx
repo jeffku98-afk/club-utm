@@ -14,11 +14,12 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 const SECCIONES = [
-  { href: '#club', etiqueta: 'El club' },
-  { href: '#prensa', etiqueta: 'Prensa' },
-  { href: '#galeria', etiqueta: 'Galería' },
-  { href: '#publicaciones', etiqueta: 'Eventos y noticias' },
-  { href: '#sedes', etiqueta: 'Sedes y Redes' },
+  { href: '/#club', etiqueta: 'El club' },
+  { href: '/open-utm', etiqueta: 'Open UTM 2026', destacado: true },
+  { href: '/#publicaciones', etiqueta: 'Eventos y noticias' },
+  { href: '/#prensa', etiqueta: 'Prensa' },
+  { href: '/#galeria', etiqueta: 'Galería' },
+  { href: '/#sedes', etiqueta: 'Sedes y redes' },
 ]
 
 export function NavegacionPrincipal() {
@@ -64,7 +65,9 @@ export function NavegacionPrincipal() {
           <NavbarItem key={seccion.href}>
             <Link
               href={seccion.href}
-              className="titular px-3 py-2 text-[17px] font-semibold tracking-wide text-white/80 transition-colors hover:text-white"
+              className={`titular px-3 py-2 text-[17px] font-semibold tracking-wide transition-colors hover:text-white ${
+                seccion.destacado ? 'text-pelota-suave' : 'text-white/80'
+              }`}
             >
               {seccion.etiqueta}
             </Link>

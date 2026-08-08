@@ -1,4 +1,4 @@
-import type { Publicacion } from './tipos'
+import type { Publicacion, Torneo } from './tipos'
 
 export const CLAVE_PUBLICACIONES = ['publicaciones'] as const
 
@@ -27,4 +27,23 @@ export function fechaLarga(iso: string): string {
     month: 'long',
     year: 'numeric',
   })
+}
+
+export const CLAVE_TORNEO = ['torneo'] as const
+
+export async function obtenerTorneoCliente(): Promise<Torneo> {
+  const respuesta = await fetch('/api/torneo')
+  if (!respuesta.ok) throw new Error('No se pudo cargar la información del torneo.')
+  return respuesta.json()
+}
+
+export async function subirDocumentoTorneo(datos: FormData): Promise<unknown> {
+  const respuesta = await fetch('/api/torneo', { method: 'POST', body: datos })
+  if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo subir el archivo.')
+  return respuesta.json()
+}
+
+export async function eliminarDocumentoTorneoCliente(seccion: string): Promise<void> {
+  const respuesta = await fetch(`/api/torneo/${seccion}`, { method: 'DELETE' })
+  if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo eliminar.')
 }

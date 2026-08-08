@@ -1,13 +1,14 @@
-import { listarPublicaciones } from '@/lib/almacen'
-import { FormularioPublicacion } from './_components/formulario-publicacion'
-import { TablaPublicaciones } from './_components/tabla-publicaciones'
+import { listarPublicaciones, obtenerTorneo } from '@/lib/almacen'
 import { BotonSalir } from './_components/boton-salir'
+import { FormularioPublicacion } from './_components/formulario-publicacion'
+import { GestionTorneo } from './_components/gestion-torneo'
+import { TablaPublicaciones } from './_components/tabla-publicaciones'
 
 export const metadata = { robots: { index: false, follow: false } }
 export const dynamic = 'force-dynamic'
 
 export default async function PaginaGestion() {
-  const publicaciones = await listarPublicaciones()
+  const [publicaciones, torneo] = await Promise.all([listarPublicaciones(), obtenerTorneo()])
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-12">
@@ -25,6 +26,10 @@ export default async function PaginaGestion() {
       <div className="grid gap-8 lg:grid-cols-[420px_1fr]">
         <FormularioPublicacion />
         <TablaPublicaciones iniciales={publicaciones} />
+      </div>
+
+      <div className="mt-10">
+        <GestionTorneo inicial={torneo} />
       </div>
     </main>
   )
