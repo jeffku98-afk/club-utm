@@ -2,13 +2,13 @@ import { Card, CardBody } from '@heroui/react'
 
 const SEDES = [
   {
-    nombre: 'Sede Jesús María',
-    detalle: 'Jesús María, Lima · Sede principal',
+    nombre: 'Jesús María',
+    detalle: 'Av. República de Chile 190, Jesús María',
     mapa: 'https://maps.app.goo.gl/8nEcWrHbiZC1rUgw8',
   },
   {
-    nombre: 'Sede Magdalena del Mar',
-    detalle: 'Magdalena del Mar, Lima',
+    nombre: 'Magdalena del Mar',
+    detalle: 'Calle 28 de Julio 504, Magdalena',
     mapa: 'https://maps.app.goo.gl/p6wG9UpWL83sFm8k8',
   },
 ]
