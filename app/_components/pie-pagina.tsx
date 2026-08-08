@@ -1,10 +1,25 @@
 import Image from 'next/image'
 
 const AUSPICIADORES = [
-  { nombre: 'Ink Sport', archivo: '/auspiciadores/ink-sport.png', alto: 'h-12' },
-  { nombre: 'Sport Play Fitness', archivo: '/auspiciadores/sport-play.png', alto: 'h-14' },
-  { nombre: 'Tenimesistas', archivo: '/auspiciadores/tenimesistas.png', alto: 'h-8' },
-  { nombre: 'Chole', archivo: '/auspiciadores/chole.png', alto: 'h-14' },
+  { nombre: 'Ink Sport', archivo: '/auspiciadores/ink-sport.png', alto: 'h-12', url: null },
+  {
+    nombre: 'Sport Play Fitness',
+    archivo: '/auspiciadores/sport-play.png',
+    alto: 'h-14',
+    url: 'https://www.sportplayfitness.com.pe/',
+  },
+  {
+    nombre: 'Tenimesistas',
+    archivo: '/auspiciadores/tenimesistas.png',
+    alto: 'h-8',
+    url: 'https://tenimesistas.com',
+  },
+  {
+    nombre: 'Chole',
+    archivo: '/auspiciadores/chole.png',
+    alto: 'h-14',
+    url: 'https://www.instagram.com/chole_ttstore',
+  },
 ]
 
 export function PiePagina() {
@@ -16,8 +31,8 @@ export function PiePagina() {
             Auspiciadores
           </h2>
           <ul className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8">
-            {AUSPICIADORES.map((auspiciador) => (
-              <li key={auspiciador.nombre}>
+            {AUSPICIADORES.map((auspiciador) => {
+              const logo = (
                 <Image
                   src={auspiciador.archivo}
                   alt={auspiciador.nombre}
@@ -25,8 +40,26 @@ export function PiePagina() {
                   height={300}
                   className={`${auspiciador.alto} w-auto object-contain`}
                 />
-              </li>
-            ))}
+              )
+
+              return (
+                <li key={auspiciador.nombre}>
+                  {auspiciador.url ? (
+                    <a
+                      href={auspiciador.url}
+                      target="_blank"
+                      rel="noopener"
+                      title={auspiciador.nombre}
+                      className="block opacity-90 transition hover:scale-105 hover:opacity-100"
+                    >
+                      {logo}
+                    </a>
+                  ) : (
+                    logo
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </div>
       </section>
