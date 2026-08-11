@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { guardarDocumentoTorneo, guardarGaleriaTorneo, obtenerTorneo } from '@/lib/almacen'
 import { COOKIE_SESION, sesionValida } from '@/lib/sesion'
@@ -28,7 +29,9 @@ export async function POST(req: NextRequest) {
 
   if (formulario.has('galeriaUrl')) {
     const galeriaUrl = String(formulario.get('galeriaUrl') ?? '').trim() || null
-    return NextResponse.json(await guardarGaleriaTorneo(galeriaUrl))
+    const actualizado = await guardarGaleriaTorneo(galeriaUrl)
+    revalidatePath('/open-utm')
+    return NextResponse.json(actualizado)
   }
 
   const seccion = String(formulario.get('seccion') ?? '')
@@ -50,5 +53,6 @@ export async function POST(req: NextRequest) {
   }
 
   const documento = await guardarDocumentoTorneo(seccion as SeccionTorneo, archivo, formato)
+  revalidatePath('/open-utm')
   return NextResponse.json(documento, { status: 201 })
 }

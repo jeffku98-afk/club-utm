@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { crearPublicacion, guardarBases, guardarPortada, listarPublicaciones } from '@/lib/almacen'
 import { COOKIE_SESION, sesionValida } from '@/lib/sesion'
@@ -63,5 +64,6 @@ export async function POST(req: NextRequest) {
     imagenUrl,
   })
 
+  revalidatePath('/')
   return NextResponse.json(publicacion, { status: 201 })
 }

@@ -40,16 +40,39 @@ const SEMILLA: Publicacion[] = [
   },
 ]
 
-async function leerArchivo(): Promise<Publicacion[]> {
-  const { blobs } = await list({ prefix: RUTA_DATOS, limit: 1 })
-  if (blobs.length === 0) {
-    await escribirArchivo(SEMILLA)
-    return SEMILLA
+/**
+ * URL pública del store. Se deriva del token (vercel_blob_rw_<storeId>_<secreto>)
+ * para leer los índices por URL directa, sin gastar operaciones avanzadas de Blob.
+ */
+function baseDelStore(): string | null {
+  const explicita = process.env.BLOB_BASE_URL
+  if (explicita) return explicita.replace(/\/$/, '')
+
+  const partes = process.env.BLOB_READ_WRITE_TOKEN?.split('_')
+  if (!partes || partes.length < 5) return null
+  return `https://${partes[3]}.public.blob.vercel-storage.com`
+}
+
+async function leerJson<T>(ruta: string, respaldo: T): Promise<T> {
+  const base = baseDelStore()
+
+  if (base) {
+    const respuesta = await fetch(`${base}/${ruta}`, { cache: 'no-store' })
+    if (respuesta.ok) return (await respuesta.json()) as T
+    if (respuesta.status === 404) return respaldo
   }
 
+  // Respaldo: si la URL directa no funciona, se resuelve con una operación avanzada.
+  const { blobs } = await list({ prefix: ruta, limit: 1 })
+  if (blobs.length === 0) return respaldo
+
   const respuesta = await fetch(blobs[0].url, { cache: 'no-store' })
-  if (!respuesta.ok) throw new Error('No se pudo leer el archivo de publicaciones.')
-  return (await respuesta.json()) as Publicacion[]
+  if (!respuesta.ok) return respaldo
+  return (await respuesta.json()) as T
+}
+
+async function leerArchivo(): Promise<Publicacion[]> {
+  return leerJson<Publicacion[]>(RUTA_DATOS, SEMILLA)
 }
 
 async function escribirArchivo(publicaciones: Publicacion[]): Promise<void> {
@@ -63,8 +86,13 @@ async function escribirArchivo(publicaciones: Publicacion[]): Promise<void> {
 }
 
 export async function listarPublicaciones(): Promise<Publicacion[]> {
-  const publicaciones = await leerArchivo()
-  return publicaciones.sort((a, b) => b.fecha.localeCompare(a.fecha))
+  try {
+    const publicaciones = await leerArchivo()
+    return [...publicaciones].sort((a, b) => b.fecha.localeCompare(a.fecha))
+  } catch (error) {
+    console.error('Almacén no disponible, se muestran las publicaciones base:', error)
+    return SEMILLA
+  }
 }
 
 export async function crearPublicacion(datos: NuevaPublicacion): Promise<Publicacion> {
@@ -115,12 +143,7 @@ const TORNEO_VACIO: Torneo = { documentos: {}, galeriaUrl: null }
 
 export async function obtenerTorneo(): Promise<Torneo> {
   try {
-    const { blobs } = await list({ prefix: RUTA_TORNEO, limit: 1 })
-    if (blobs.length === 0) return TORNEO_VACIO
-
-    const respuesta = await fetch(blobs[0].url, { cache: 'no-store' })
-    if (!respuesta.ok) return TORNEO_VACIO
-    return (await respuesta.json()) as Torneo
+    return await leerJson<Torneo>(RUTA_TORNEO, TORNEO_VACIO)
   } catch {
     return TORNEO_VACIO
   }

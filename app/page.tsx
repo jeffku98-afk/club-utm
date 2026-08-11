@@ -8,7 +8,7 @@ import { Portada } from './_components/portada'
 import { Publicaciones } from './_components/publicaciones'
 import { SedesRedes } from './_components/sedes-redes'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export default async function PaginaInicio() {
   const publicaciones = await listarPublicaciones()

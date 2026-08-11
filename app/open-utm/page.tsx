@@ -6,7 +6,7 @@ import { NavegacionPrincipal } from '../_components/navegacion-principal'
 import { PiePagina } from '../_components/pie-pagina'
 import { DocumentosTorneo } from './documentos-torneo'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 3600
 
 export const metadata = {
   title: 'I Open Internacional Copa UTM 2026 · Club UTM',

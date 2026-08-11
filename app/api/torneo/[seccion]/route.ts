@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { eliminarDocumentoTorneo } from '@/lib/almacen'
 import { COOKIE_SESION, sesionValida } from '@/lib/sesion'
@@ -20,5 +21,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ s
   const eliminado = await eliminarDocumentoTorneo(seccion as SeccionTorneo)
   if (!eliminado) return NextResponse.json({ error: 'No hay documento cargado.' }, { status: 404 })
 
+  revalidatePath('/open-utm')
   return NextResponse.json({ ok: true })
 }

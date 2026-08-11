@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { NextRequest, NextResponse } from 'next/server'
 import { eliminarPublicacion } from '@/lib/almacen'
 import { COOKIE_SESION, sesionValida } from '@/lib/sesion'
@@ -13,5 +14,6 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const eliminada = await eliminarPublicacion(id)
   if (!eliminada) return NextResponse.json({ error: 'La publicación ya no existe.' }, { status: 404 })
 
+  revalidatePath('/')
   return NextResponse.json({ ok: true })
 }
