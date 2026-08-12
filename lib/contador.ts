@@ -1,4 +1,4 @@
-import { Redis } from '@upstash/redis'
+import { createClient, type RedisClientType } from 'redis'
 
 export interface ResumenVisitas {
   total: number
@@ -11,23 +11,37 @@ const CLAVE_TOTAL = 'visitas:total'
 const PREFIJO_DIA = 'visitas:dia:'
 const DIAS_RETENIDOS = 60 * 60 * 24 * 120
 
-let cliente: Redis | null = null
+let conexion: Promise<RedisClientType> | null = null
 
-function obtenerCliente(): Redis | null {
-  if (cliente) return cliente
-  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN
-  if (!url || !token) return null
-
-  cliente = new Redis({ url, token })
-  return cliente
+function urlRedis(): string | undefined {
+  return process.env.REDIS_URL ?? process.env.KV_URL
 }
 
-function claveDia(fecha: Date): string {
-  return `${PREFIJO_DIA}${fechaLima(fecha)}`
+/**
+ * Reutiliza la conexión entre invocaciones de la misma instancia serverless.
+ * Si la conexión se pierde, se descarta para que la siguiente llamada reconecte.
+ */
+async function obtenerCliente(): Promise<RedisClientType | null> {
+  const url = urlRedis()
+  if (!url) return null
+
+  if (!conexion) {
+    const cliente: RedisClientType = createClient({ url })
+    cliente.on('error', () => {
+      conexion = null
+    })
+    conexion = cliente.connect().then(() => cliente)
+  }
+
+  try {
+    return await conexion
+  } catch {
+    conexion = null
+    return null
+  }
 }
 
-/** Fecha en formato AAAA-MM-DD según la zona horaria de Lima (UTC-5). */
+/** Fecha en formato AAAA-MM-DD según la zona horaria de Lima. */
 function fechaLima(fecha: Date): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Lima',
@@ -38,37 +52,54 @@ function fechaLima(fecha: Date): string {
 }
 
 export async function registrarVisita(): Promise<void> {
-  const redis = obtenerCliente()
-  if (!redis) return
+  try {
+    const redis = await obtenerCliente()
+    if (!redis) return
 
-  const clave = claveDia(new Date())
-  await Promise.all([
-    redis.incr(CLAVE_TOTAL),
-    redis.incr(clave).then(() => redis.expire(clave, DIAS_RETENIDOS)),
-  ])
+    const clave = `${PREFIJO_DIA}${fechaLima(new Date())}`
+    await redis
+      .multi()
+      .incr(CLAVE_TOTAL)
+      .incr(clave)
+      .expire(clave, DIAS_RETENIDOS)
+      .exec()
+  } catch (error) {
+    console.error('No se pudo registrar la visita:', error)
+  }
 }
 
 export async function obtenerResumenVisitas(): Promise<ResumenVisitas> {
-  const redis = obtenerCliente()
-  if (!redis) return { total: 0, hoy: 0, ultimos7Dias: [], disponible: false }
+  const vacio: ResumenVisitas = { total: 0, hoy: 0, ultimos7Dias: [], disponible: false }
 
-  const dias = Array.from({ length: 7 }, (_, i) => {
-    const fecha = new Date()
-    fecha.setDate(fecha.getDate() - (6 - i))
-    return fechaLima(fecha)
-  })
+  try {
+    const redis = await obtenerCliente()
+    if (!redis) return vacio
 
-  const [total, ...conteos] = await redis.mget<(number | null)[]>(
-    CLAVE_TOTAL,
-    ...dias.map((fecha) => `${PREFIJO_DIA}${fecha}`),
-  )
+    const dias = Array.from({ length: 7 }, (_, i) => {
+      const fecha = new Date()
+      fecha.setDate(fecha.getDate() - (6 - i))
+      return fechaLima(fecha)
+    })
 
-  const ultimos7Dias = dias.map((fecha, i) => ({ fecha, visitas: conteos[i] ?? 0 }))
+    const valores = await redis.mGet([
+      CLAVE_TOTAL,
+      ...dias.map((fecha) => `${PREFIJO_DIA}${fecha}`),
+    ])
 
-  return {
-    total: total ?? 0,
-    hoy: ultimos7Dias[6]?.visitas ?? 0,
-    ultimos7Dias,
-    disponible: true,
+    const total = Number(valores[0] ?? 0)
+    const ultimos7Dias = dias.map((fecha, i) => ({
+      fecha,
+      visitas: Number(valores[i + 1] ?? 0),
+    }))
+
+    return {
+      total,
+      hoy: ultimos7Dias[6]?.visitas ?? 0,
+      ultimos7Dias,
+      disponible: true,
+    }
+  } catch (error) {
+    console.error('No se pudo leer el contador de visitas:', error)
+    return vacio
   }
 }
