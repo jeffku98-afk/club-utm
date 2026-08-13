@@ -67,8 +67,8 @@ export default async function PaginaTorneo() {
             <Image
               src="/open-internacional-copa-utm-2026.jpeg"
               alt="Afiche del I Open Internacional Copa UTM 2026"
-              width={1000}
-              height={1500}
+              width={1254}
+              height={1254}
               priority
               className="mx-auto w-full max-w-sm rounded-2xl shadow-2xl"
             />
