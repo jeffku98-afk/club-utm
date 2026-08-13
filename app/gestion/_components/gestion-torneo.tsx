@@ -7,10 +7,25 @@ import { useRef, useState } from 'react'
 import {
   CLAVE_TORNEO,
   eliminarDocumentoTorneoCliente,
+  guardarTorneo,
   obtenerTorneoCliente,
-  subirDocumentoTorneo,
+  subirArchivo,
+  TAMANO_MAXIMO_ARCHIVO,
 } from '@/lib/api'
-import { SECCIONES_TORNEO, type SeccionTorneo, type Torneo } from '@/lib/tipos'
+import {
+  SECCIONES_TORNEO,
+  type FormatoDocumento,
+  type SeccionTorneo,
+  type Torneo,
+} from '@/lib/tipos'
+
+const FORMATOS: Record<string, FormatoDocumento> = {
+  'application/pdf': 'pdf',
+  'application/vnd.ms-excel': 'excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'excel',
+}
+
+const MB = 1024 * 1024
 
 export function GestionTorneo({ inicial }: { inicial: Torneo }) {
   const queryClient = useQueryClient()
@@ -30,7 +45,18 @@ export function GestionTorneo({ inicial }: { inicial: Torneo }) {
   }
 
   const subir = useMutation({
-    mutationFn: subirDocumentoTorneo,
+    mutationFn: async ({ seccion, archivo }: { seccion: SeccionTorneo; archivo: File }) => {
+      const formato = FORMATOS[archivo.type]
+      if (!formato) throw new Error('El archivo debe ser PDF o Excel.')
+      if (archivo.size > TAMANO_MAXIMO_ARCHIVO) {
+        throw new Error(
+          `"${archivo.name}" pesa ${(archivo.size / MB).toFixed(1)} MB y el máximo es 8 MB.`,
+        )
+      }
+
+      const url = await subirArchivo(archivo, `torneo/${seccion}`)
+      return guardarTorneo({ seccion, nombre: archivo.name, url, formato })
+    },
     onSuccess: refrescar,
   })
 
@@ -40,11 +66,7 @@ export function GestionTorneo({ inicial }: { inicial: Torneo }) {
   })
 
   const guardarGaleria = useMutation({
-    mutationFn: async (url: string) => {
-      const datos = new FormData()
-      datos.append('galeriaUrl', url)
-      return subirDocumentoTorneo(datos)
-    },
+    mutationFn: (galeriaUrl: string) => guardarTorneo({ galeriaUrl }),
     onSuccess: () => {
       setAviso('Enlace guardado.')
       refrescar()
@@ -58,7 +80,8 @@ export function GestionTorneo({ inicial }: { inicial: Torneo }) {
         <div>
           <h2 className="titular text-2xl font-semibold">Open Internacional Copa UTM 2026</h2>
           <p className="text-sm text-default-500">
-            Sube el PDF o Excel de cada sección. Al reemplazar un archivo, el anterior se elimina.
+            Sube el PDF o Excel de cada sección, hasta 8 MB. Al reemplazar un archivo, el anterior
+            se elimina.
           </p>
         </div>
 
@@ -73,13 +96,8 @@ export function GestionTorneo({ inicial }: { inicial: Torneo }) {
               titulo={seccion.titulo}
               nombreArchivo={torneo.documentos[seccion.clave]?.nombre ?? null}
               urlArchivo={torneo.documentos[seccion.clave]?.url ?? null}
-              subiendo={subir.isPending && subir.variables?.get('seccion') === seccion.clave}
-              onSubir={(archivo) => {
-                const datos = new FormData()
-                datos.append('seccion', seccion.clave)
-                datos.append('archivo', archivo)
-                subir.mutate(datos)
-              }}
+              subiendo={subir.isPending && subir.variables?.seccion === seccion.clave}
+              onSubir={(archivo) => subir.mutate({ seccion: seccion.clave, archivo })}
               onQuitar={() => quitar.mutate(seccion.clave)}
             />
           ))}

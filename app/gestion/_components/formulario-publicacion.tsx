@@ -5,12 +5,11 @@ import { useForm } from '@tanstack/react-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
-import { CLAVE_PUBLICACIONES, publicar } from '@/lib/api'
+import { CLAVE_PUBLICACIONES, publicar, subirArchivo, TAMANO_MAXIMO_ARCHIVO } from '@/lib/api'
 import type { TipoPublicacion } from '@/lib/tipos'
 
-const TAMANO_MAXIMO_PDF = 4 * 1024 * 1024
-const TAMANO_MAXIMO_IMAGEN = 2 * 1024 * 1024
 const FORMATOS_IMAGEN = ['image/jpeg', 'image/png', 'image/webp']
+const MB = 1024 * 1024
 
 export function FormularioPublicacion() {
   const queryClient = useQueryClient()
@@ -39,7 +38,22 @@ export function FormularioPublicacion() {
   }
 
   const { mutateAsync, isPending, isSuccess, error } = useMutation({
-    mutationFn: publicar,
+    mutationFn: async (valores: {
+      datos: Record<string, string | null>
+      bases?: File
+      portada?: File
+    }) => {
+      const [basesUrl, imagenUrl] = await Promise.all([
+        valores.bases ? subirArchivo(valores.bases, 'bases') : Promise.resolve(null),
+        valores.portada ? subirArchivo(valores.portada, 'portadas') : Promise.resolve(null),
+      ])
+
+      return publicar({
+        ...valores.datos,
+        basesUrl: basesUrl ?? valores.datos.enlaceBases ?? null,
+        imagenUrl,
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CLAVE_PUBLICACIONES })
       router.refresh()
@@ -59,25 +73,25 @@ export function FormularioPublicacion() {
       const archivo = campoArchivo.current?.files?.[0]
       const portada = campoPortada.current?.files?.[0]
 
-      if (archivo && archivo.size > TAMANO_MAXIMO_PDF) {
-        setErrorArchivo('El PDF supera los 4 MB. Súbelo a Drive y pega el enlace.')
+      if (archivo && archivo.type !== 'application/pdf') {
+        setErrorArchivo('Las bases deben estar en formato PDF.')
         return
       }
       if (portada && !FORMATOS_IMAGEN.includes(portada.type)) {
         setErrorArchivo('La portada debe ser JPG, PNG o WebP.')
         return
       }
-      if (portada && portada.size > TAMANO_MAXIMO_IMAGEN) {
-        setErrorArchivo('La portada supera los 2 MB. Redúcela antes de subirla.')
-        return
+      for (const candidato of [archivo, portada]) {
+        if (candidato && candidato.size > TAMANO_MAXIMO_ARCHIVO) {
+          setErrorArchivo(
+            `"${candidato.name}" pesa ${(candidato.size / MB).toFixed(1)} MB y el máximo es 8 MB.`,
+          )
+          return
+        }
       }
 
-      const datos = new FormData()
-      Object.entries(value).forEach(([campo, valor]) => datos.append(campo, valor))
-      if (archivo) datos.append('bases', archivo)
-      if (portada) datos.append('portada', portada)
-
-      await mutateAsync(datos)
+      setErrorArchivo('')
+      await mutateAsync({ datos: { ...value }, bases: archivo, portada })
       formApi.reset()
       limpiarArchivos()
     },
@@ -180,7 +194,7 @@ export function FormularioPublicacion() {
             className="w-full rounded-xl border border-default-200 bg-default-100 p-3 text-sm"
           />
           <p className="mt-1 text-xs text-default-400">
-            JPG, PNG o WebP, hasta 2 MB. Se muestra en la tarjeta del evento.
+            JPG, PNG o WebP, hasta 8 MB. Se muestra en la tarjeta del evento.
           </p>
           {vistaPrevia && (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -203,6 +217,7 @@ export function FormularioPublicacion() {
             accept="application/pdf"
             className="w-full rounded-xl border border-default-200 bg-default-100 p-3 text-sm"
           />
+          <p className="mt-1 text-xs text-default-400">PDF, hasta 8 MB.</p>
           {errorArchivo && <p className="mt-1 text-sm text-danger">{errorArchivo}</p>}
         </div>
 
@@ -218,7 +233,7 @@ export function FormularioPublicacion() {
         </form.Field>
 
         <Button color="primary" radius="full" isLoading={isPending} onPress={() => form.handleSubmit()}>
-          Publicar
+          {isPending ? 'Subiendo…' : 'Publicar'}
         </Button>
 
         {error && <p className="text-sm text-danger">{error.message}</p>}

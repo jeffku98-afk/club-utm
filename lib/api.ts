@@ -8,8 +8,12 @@ export async function obtenerPublicaciones(): Promise<Publicacion[]> {
   return respuesta.json()
 }
 
-export async function publicar(datos: FormData): Promise<Publicacion> {
-  const respuesta = await fetch('/api/publicaciones', { method: 'POST', body: datos })
+export async function publicar(datos: Record<string, string | null>): Promise<Publicacion> {
+  const respuesta = await fetch('/api/publicaciones', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datos),
+  })
   if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo publicar.')
   return respuesta.json()
 }
@@ -37,13 +41,32 @@ export async function obtenerTorneoCliente(): Promise<Torneo> {
   return respuesta.json()
 }
 
-export async function subirDocumentoTorneo(datos: FormData): Promise<unknown> {
-  const respuesta = await fetch('/api/torneo', { method: 'POST', body: datos })
-  if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo subir el archivo.')
+export async function guardarTorneo(datos: Record<string, unknown>): Promise<unknown> {
+  const respuesta = await fetch('/api/torneo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(datos),
+  })
+  if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo guardar.')
   return respuesta.json()
 }
 
 export async function eliminarDocumentoTorneoCliente(seccion: string): Promise<void> {
   const respuesta = await fetch(`/api/torneo/${seccion}`, { method: 'DELETE' })
   if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo eliminar.')
+}
+
+export const TAMANO_MAXIMO_ARCHIVO = 8 * 1024 * 1024
+
+/** Sube el archivo directamente a Vercel Blob y devuelve su URL pública. */
+export async function subirArchivo(archivo: File, carpeta: string): Promise<string> {
+  const { upload } = await import('@vercel/blob/client')
+
+  const resultado = await upload(`${carpeta}/${archivo.name}`, archivo, {
+    access: 'public',
+    handleUploadUrl: '/api/subida',
+    contentType: archivo.type,
+  })
+
+  return resultado.url
 }

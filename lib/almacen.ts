@@ -10,8 +10,7 @@ import type {
 } from './tipos'
 
 const RUTA_DATOS = 'datos/publicaciones.json'
-const PREFIJO_BASES = 'bases/'
-const PREFIJO_PORTADAS = 'portadas/'
+
 
 const SEMILLA: Publicacion[] = [
   {
@@ -107,37 +106,22 @@ export async function eliminarPublicacion(id: string): Promise<boolean> {
   const publicacion = publicaciones.find((p) => p.id === id)
   if (!publicacion) return false
 
-  const archivos = [publicacion.basesUrl, publicacion.imagenUrl].filter(
-    (url): url is string => !!url && url.startsWith('https://'),
-  )
-  await Promise.all(archivos.map((url) => del(url).catch(() => null)))
+  await Promise.all([
+    eliminarArchivo(publicacion.basesUrl),
+    eliminarArchivo(publicacion.imagenUrl),
+  ])
 
   await escribirArchivo(publicaciones.filter((p) => p.id !== id))
   return true
 }
 
-function nombreSeguro(archivo: File): string {
-  return `${Date.now()}-${archivo.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`
-}
-
-export async function guardarBases(archivo: File): Promise<string> {
-  const { url } = await put(`${PREFIJO_BASES}${nombreSeguro(archivo)}`, archivo, {
-    access: 'public',
-    contentType: 'application/pdf',
-  })
-  return url
-}
-
-export async function guardarPortada(archivo: File): Promise<string> {
-  const { url } = await put(`${PREFIJO_PORTADAS}${nombreSeguro(archivo)}`, archivo, {
-    access: 'public',
-    contentType: archivo.type,
-  })
-  return url
+/** Elimina un blob del store si la URL le pertenece. */
+export async function eliminarArchivo(url: string | null | undefined): Promise<void> {
+  if (!url || !url.startsWith('https://')) return
+  await del(url).catch(() => null)
 }
 
 const RUTA_TORNEO = 'datos/open-utm.json'
-const PREFIJO_TORNEO = 'torneo/'
 
 const TORNEO_VACIO: Torneo = { documentos: {}, galeriaUrl: null }
 
@@ -161,26 +145,22 @@ async function escribirTorneo(torneo: Torneo): Promise<void> {
 
 export async function guardarDocumentoTorneo(
   seccion: SeccionTorneo,
-  archivo: File,
+  nombre: string,
+  url: string,
   formato: FormatoDocumento,
 ): Promise<DocumentoTorneo> {
   const torneo = await obtenerTorneo()
   const anterior = torneo.documentos[seccion]
 
-  const { url } = await put(`${PREFIJO_TORNEO}${seccion}/${nombreSeguro(archivo)}`, archivo, {
-    access: 'public',
-    contentType: archivo.type,
-  })
-
   const documento: DocumentoTorneo = {
-    nombre: archivo.name,
+    nombre,
     url,
     formato,
     actualizadoEn: new Date().toISOString(),
   }
 
   await escribirTorneo({ ...torneo, documentos: { ...torneo.documentos, [seccion]: documento } })
-  if (anterior?.url) await del(anterior.url).catch(() => null)
+  await eliminarArchivo(anterior?.url)
 
   return documento
 }
@@ -194,7 +174,7 @@ export async function eliminarDocumentoTorneo(seccion: SeccionTorneo): Promise<b
   delete documentos[seccion]
 
   await escribirTorneo({ ...torneo, documentos })
-  await del(documento.url).catch(() => null)
+  await eliminarArchivo(documento.url)
   return true
 }
 
