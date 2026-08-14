@@ -1,10 +1,10 @@
 import { Button } from '@heroui/react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { obtenerTorneo } from '@/lib/almacen'
 import { NavegacionPrincipal } from '../_components/navegacion-principal'
 import { PiePagina } from '../_components/pie-pagina'
 import { DocumentosTorneo } from './documentos-torneo'
+import { AficheTorneo } from './afiche-torneo'
 
 export const revalidate = 3600
 
@@ -63,15 +63,7 @@ export default async function PaginaTorneo() {
                 )}
               </div>
             </div>
-
-            <Image
-              src="/open-internacional-copa-utm-2026.jpeg"
-              alt="Afiche del I Open Internacional Copa UTM 2026"
-              width={1254}
-              height={1254}
-              priority
-              className="mx-auto w-full max-w-sm rounded-2xl shadow-2xl"
-            />
+            <AficheTorneo />
           </div>
         </section>
 
