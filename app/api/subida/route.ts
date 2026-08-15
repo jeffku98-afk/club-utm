@@ -4,7 +4,7 @@ import { COOKIE_SESION, sesionValida } from '@/lib/sesion'
 
 export const runtime = 'nodejs'
 
-const TAMANO_MAXIMO = 8 * 1024 * 1024
+const TAMANO_MAXIMO = 20 * 1024 * 1024
 
 const TIPOS_PERMITIDOS = [
   'application/pdf',

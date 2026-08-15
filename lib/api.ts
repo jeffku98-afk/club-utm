@@ -56,7 +56,7 @@ export async function eliminarDocumentoTorneoCliente(seccion: string): Promise<v
   if (!respuesta.ok) throw new Error((await respuesta.json()).error ?? 'No se pudo eliminar.')
 }
 
-export const TAMANO_MAXIMO_ARCHIVO = 8 * 1024 * 1024
+export const TAMANO_MAXIMO_ARCHIVO = 20 * 1024 * 1024
 
 /** Sube el archivo directamente a Vercel Blob y devuelve su URL pública. */
 export async function subirArchivo(archivo: File, carpeta: string): Promise<string> {
